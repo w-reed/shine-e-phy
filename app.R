@@ -36,3 +36,12 @@ tree.pruned2 = drop.tip(tree, tips2drop)
 ## calculated PD
 f1 = faithsPD(s1, tree.pruned)
 f2 = faithsPD(s2, tree.pruned2)
+
+tree.pruned$Nnode
+tree.pruned$node.label
+
+fs = as.data.frame(cbind(tree.pruned$node.label,  c(1:length(tree.pruned$node.label))))
+colnames(fs) = c("family", "node")
+
+fs = fs[fs$family != "", ]
+fs

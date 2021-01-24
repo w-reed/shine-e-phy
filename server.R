@@ -7,6 +7,7 @@ server = function(input, output, session) {
   output$Phylo = renderPlot({
     ggtree(tree.pruned) + 
       geom_tiplab3() +
+      geom_highlight(node = fs$node) + 
       xlim(0, max(tree.pruned$edge.length) * 2)
    
      
