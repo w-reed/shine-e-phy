@@ -112,14 +112,14 @@ faithsPD = function(log, tree){
 ## this is just a modification of geom_tiplab() from ggtree. It was not working
 ## in shiny because of the match.call function. Maybe this will be fixed in a 
 ## future release but for now just hard set nodelab to false.
-geom_tiplab3 = function (mapping = NULL, hjust = 0, align = FALSE, linetype = "dotted", 
+geom_tiplab3 = function (mapping = NULL, hjust = 0, vjust = 0, align = FALSE, linetype = "dotted", 
                          linesize = 0.5, geom = "text", offset = 0, as_ylab = FALSE, 
                          ...){
   #.call <- match.call(call = sys.call(sys.parent(1)))
   #nodelab <- ifelse(as.list(.call)[[1]] == "geom_nodelab", TRUE, FALSE)
   nodelab = FALSE
   
-  structure(list(mapping = mapping, hjust = hjust, align = align, 
+  structure(list(mapping = mapping, hjust = hjust, vjust = vjust, align = align, 
                  linetype = linetype, linesize = linesize, geom = geom, 
                  offset = offset, as_ylab = as_ylab, nodelab = nodelab, 
                  ...), class = "tiplab")

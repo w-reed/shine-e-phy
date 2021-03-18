@@ -1,47 +1,127 @@
-library(phylocanvas)
-library(ape)
-library(ggtree)
-library(picante)
+library(shiny)
+library(shinydashboard)
 library(plotly)
-library(htmlwidgets)
-library(shinyjs)
 
-tree <- read.tree("tree/PhylofeastTree.tre")
+ui = fluidPage(
+  
+  title = "Phylofeast",
+  includeCSS("www/style.css"),
+  
+  navbarPage(title = img(class = "topimg", src = 'logo.png', height = '70px', width = '280px', bottom = "10px"),
+                
+                tabPanel("Data",
+                         sidebarPanel(
+                           fileInput(inputId = 'foodJournal', "Food Journal Data", width = 200),
+                           actionButton(inputId = "demo", label = "Demo Mode")
+                         ),
+                         mainPanel(
+                           dataTableOutput(outputId = 'data')
+                         )
+                ),
+             
+                tabPanel("Phylogeny",
+                         sidebarPanel(
+                           
+                         ),
+                         mainPanel(
+                           plotOutput(outputId = "Phylo", width = 1000, height = 600)
+                         )
+                         
+                ),
+                
+                tabPanel("Diversity",
+                         mainPanel(
+                           plotlyOutput(outputId = "richness", width = 500, height = 200),
+                           plotlyOutput(outputId = "diversity", width = 500, height = 200),
+                           plotlyOutput(outputId = "faithsPD", width = 500, height = 200)
+                         )
+                         
+                ),
+                
+                tabPanel("Geography",
+                         mainPanel(
+                           plotlyOutput(outputId = "map")
+                         )
+                )
+)
+) 
 
-## Read in the plants
-plants = read.csv("data/plants.csv")
-plants$Species = sub("^(\\S*\\s+\\S+).*", "\\1", plants$Scientific.Name.with.Author)
-plants$Genus = gsub(' [A-z ]*', '' , plants$Species)
+server = function(input, output, session) {
+  
+  source('functions.R')
+  
+  reactive({
+    inFile = input$foodJounal
+    if(is.null(input$foodJournal))     
+      return(NULL) 
+    
+    
+    s1 <<- read.csv(inFile$datapath, header = TRUE)
+    
+    output$data = renderDataTable({
 
-## filter out duplicates of genus
-plants_singular = plants[, c("Genus", "Family")]
-plants_singular$Family = ifelse(plants_singular$Family == "", NA, plants_singular$Family)
-plants_singular = plants_singular[!duplicated(plants_singular[,"Genus"]) & !is.na(plants_singular$Family), ]
+    })
+    
+    
+    
+  })
+  
+  #source('core.R')
+  
+  observeEvent(input$demo,{
+    source("demo.R")
+    
+    output$data = renderDataTable({
+      s1.1 = as.data.frame(t(s1))
+      s1.1 = s1.1[c(2:nrow(s1.1)), ]
+      colnames(s1.1) = c("Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7")
+      return(s1.1)
+    })
+    
+  })
+  
+  
 
-## simulate a food journal
-s1 = simulate.diet(tree$tip.label)
-r1 = richness(s1)
-d1 = diversity(s1)
+  
+  
 
-s2 = simulate.diet(tree$tip.label)
-r2 = richness(s2)
-d2 = diversity(s2)
+  
+  
 
-## Prune tree
-tips2drop = tree$tip.label[which(!tree$tip.label%in%colnames(s1))]
-tree.pruned = drop.tip(tree,tips2drop)
-tips2drop = tree$tip.label[which(!tree$tip.label%in%colnames(s2))]
-tree.pruned2 = drop.tip(tree, tips2drop)
 
-## calculated PD
-f1 = faithsPD(s1, tree.pruned)
-f2 = faithsPD(s2, tree.pruned2)
+  
+  output$Phylo = renderPlot({
+    ggtree(tree.pruned) + 
+      geom_tiplab3() 
+  })
+  
+  output$richness = renderPlotly({
+    pr = plot_ly(r1, x = ~Day, y = ~Richness, type = "scatter", mode = "lines+markers", line = list(color = rgb(0,0,0.8), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+    add_trace(pr, data = r2, x = ~Day, y = ~Richness, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+  })
+  
+  output$diversity = renderPlotly({
+    pd = plot_ly(d1, x = ~Day, y = ~Diversity, type = 'scatter', mode = 'lines+markers', line = list(color = rgb(0.8,0,0), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+    add_trace(pd, data = d2, x = ~Day, y = ~Diversity, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+  })
+  
+  output$faithsPD = renderPlotly({
+    pf = plot_ly(f1, x = ~Day, y = ~PD, type = 'scatter', mode = "lines+markers", line = list(color = rgb(0,0.8,0), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+    add_trace(pf, data = f2, x = ~Day, y = ~PD, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+  })
+  
+  
+  output$map = renderPlotly({
+    maply = ggplot(world) + 
+      geom_sf() + 
+      geom_sf(data = sample_gs, fill = rgb(0.01, 0.02, 0.3, 0.7), size = 0.1)
+    
+    ggplotly(maply)
+    
+  })
+  
+  
+}
 
-tree.pruned$Nnode
-tree.pruned$node.label
+shinyApp(ui = ui, server = server)
 
-fs = as.data.frame(cbind(tree.pruned$node.label,  c(1:length(tree.pruned$node.label))))
-colnames(fs) = c("family", "node")
-
-fs = fs[fs$family != "", ]
-fs
