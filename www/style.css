@@ -88,6 +88,18 @@ p{
   border-radius:0;
 }
 
+.selectize-control{
+  margin-bottom:30px;
+  border-radius:2px;
+}
+
+.selectize-input{
+  border-radius:2px;
+}
+
+.selectize-input .dropdown-active {
+  border-radius:2px;
+}
 
 #foodJournal_progress{
   border-radius:0;
@@ -118,3 +130,7 @@ p{
 #diversity_description{
   font-size:14;
 }
+
+#checkbox :after, #checkbox :before{
+  background-color:#bff442;
+  }

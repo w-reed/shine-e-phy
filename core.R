@@ -19,18 +19,21 @@ world <- ne_countries(scale = "medium", returnclass = "sf")
 r1 = richness(s1)
 d1 = diversity(s1)
 
-# r2 = richness(s2)
-# d2 = diversity(s2)
+if(exists("s2")){
+  r2 = richness(s2)
+  d2 = diversity(s2)
+}
+
 
 ## Prune tree
 tips2drop = tree$tip.label[which(!tree$tip.label%in%colnames(s1))]
 tree.pruned = drop.tip(tree,tips2drop)
-#tips2drop = tree$tip.label[which(!tree$tip.label%in%colnames(s2))]
-#tree.pruned2 = drop.tip(tree, tips2drop)
+tips2drop = tree$tip.label[which(!tree$tip.label%in%colnames(s2))]
+tree.pruned2 = drop.tip(tree, tips2drop)
 
 ## calculated PD
 f1 = faithsPD(s1, tree.pruned)
-#f2 = faithsPD(s2, tree.pruned2)
+f2 = faithsPD(s2, tree.pruned2)
 
 #tree.pruned$Nnode
 #tree.pruned$node.label
