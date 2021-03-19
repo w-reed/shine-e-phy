@@ -42,7 +42,7 @@ f1 = faithsPD(s1, tree.pruned)
 #fs
 
 
-for(i in common_species){
-  BIEN_ranges_species(i, directory = paste("data", i, sep = "/"))
-}
+# for(i in common_species){
+#   BIEN_ranges_species(i, directory = paste("data", i, sep = "/"))
+# }
 
