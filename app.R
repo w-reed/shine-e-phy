@@ -2,17 +2,22 @@ library(shiny)
 library(shinydashboard)
 library(plotly)
 
+common_species = c("Solanum lycopersicum", "Solanum tuberosum", "Malus domestica", "Triticum aestivum", "Zea mays", "Oryza sativa")
+
 ui = fluidPage(
   
   title = "Phylofeast",
   includeCSS("www/style.css"),
   
-  navbarPage(title = img(class = "topimg", src = 'logo.png', height = '70px', width = '280px', bottom = "10px"),
+  navbarPage(title = img(class = "topimg", src = 'logo.png', height = '65px', width = '260px', bottom = "10px"),
                 
                 tabPanel("Data",
                          sidebarPanel(
-                           fileInput(inputId = 'foodJournal', "Food Journal Data", width = 200),
-                           actionButton(inputId = "demo", label = "Demo Mode")
+                           fileInput(inputId = 'foodJournal', "Food Journal Data"),
+                           fileInput(inputId = 'classJournal', "Class Data"),
+                           checkboxGroupInput(inputId = "display", label = "Data to display:", choices = c("Individual","Class")),
+                           actionButton(inputId = "demo", label = "Demo Mode"),
+                           actionButton(inputId = "clear", label = "Clear data")
                          ),
                          mainPanel(
                            dataTableOutput(outputId = 'data')
@@ -20,9 +25,9 @@ ui = fluidPage(
                 ),
              
                 tabPanel("Phylogeny",
-                         sidebarPanel(
-                           
-                         ),
+                         # sidebarPanel(
+                         #   
+                         # ),
                          mainPanel(
                            plotOutput(outputId = "Phylo", width = 1000, height = 600)
                          )
@@ -30,17 +35,26 @@ ui = fluidPage(
                 ),
                 
                 tabPanel("Diversity",
+                         sidebarPanel(
+                            selectInput(inputId = "diversity", label = "Measure of Diversity", 
+                                        choices = c("Species Richness",
+                                                    "Shannon's Diversity Index",
+                                                    "Phylogenetic Diversity"))
+                         ),
                          mainPanel(
-                           plotlyOutput(outputId = "richness", width = 500, height = 200),
-                           plotlyOutput(outputId = "diversity", width = 500, height = 200),
-                           plotlyOutput(outputId = "faithsPD", width = 500, height = 200)
+                           plotlyOutput(outputId = "diversity_plot", width = 1000, height = 400),
+                           textOutput(outputId = "diversity_description")
                          )
                          
                 ),
                 
                 tabPanel("Geography",
+                         sidebarPanel(
+                           selectInput(inputId = "species_to_map", label = "Species", choices = common_species),
+                           p("Select one of the available species to plot the geographic range. For some species this includes agricultural ranges as well as native ranges. More species coming soon!")
+                         ),
                          mainPanel(
-                           plotlyOutput(outputId = "map")
+                           plotlyOutput(outputId = "map", width = 1000, height = 600)
                          )
                 )
 )
@@ -50,20 +64,53 @@ server = function(input, output, session) {
   
   source('functions.R')
   
-  reactive({
-    inFile = input$foodJounal
-    if(is.null(input$foodJournal))     
-      return(NULL) 
+  dataInput = reactive({
+    inFile = input$foodJournal
+    validate(
+      need(input$foodJournal, "Select a file!")
+    )
+    
+    read.csv(inFile$datapath, header = TRUE)
+    
+    #source("core.R")
+    #disable(id="demo")
+    
+  })
+  
+  # observeEvent(input$foodJournal,{
+  #   disable(id = "demo")
+  # })
+  
+  
+  output$data = renderDataTable({
+    
+    x = as.data.frame(dataInput())
+    Genus = colnames(x)[2:length(colnames(x))]
     
     
-    s1 <<- read.csv(inFile$datapath, header = TRUE)
+    s1.1 = as.data.frame(t(dataInput()))
+    s1.1 = s1.1[c(2:nrow(s1.1)), ]
+    colnames(s1.1) = c("Day 1", "Day 2", "Day 3", "Day 4", "Day 5", "Day 6", "Day 7")
+    s1.2 = cbind(Genus, s1.1)
     
-    output$data = renderDataTable({
-
+    return(s1.2)
     })
+  
+
+  observeEvent(input$foodJournal,{
+    s1 <<- dataInput()
+    print(s1)
+    source("core.R")
+    
+    for(i in 1:length(tree.pruned$tip.label)){
+      
+    }
     
     
-    
+  })
+  
+  observeEvent(input$clear, {
+    session$reload()
   })
   
   #source('core.R')
@@ -81,42 +128,53 @@ server = function(input, output, session) {
   })
   
   
-
-  
-  
-
-  
-  
-
-
-  
   output$Phylo = renderPlot({
     ggtree(tree.pruned) + 
       geom_tiplab3() 
   })
   
-  output$richness = renderPlotly({
-    pr = plot_ly(r1, x = ~Day, y = ~Richness, type = "scatter", mode = "lines+markers", line = list(color = rgb(0,0,0.8), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
-    add_trace(pr, data = r2, x = ~Day, y = ~Richness, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+  
+  
+  output$diversity_plot = renderPlotly({
+    if(input$diversity == "Species Richness"){
+      pr = plot_ly(r1, x = ~Day, y = ~Richness, type = "scatter", mode = "lines+markers", 
+                   line = list(color = rgb(0.5882353, 0.5882353,0.5882353), width = 3, dash = "dash"), 
+                   marker = list(color = rgb(0.5882353, 0.5882353,0.5882353, 0.6),
+                                 line = list(color = rgb(0.1,0.1,0.1, 0.8), width = 2), size = 16))
+    } else if (input$diversity == "Shannon's Diversity Index"){
+      pd = plot_ly(d1, x = ~Day, y = ~Diversity, type = 'scatter', mode = 'lines+markers', 
+                   line = list(color = rgb(0.5882353, 0.5882353,0.5882353), width = 3, dash = "dash"), 
+                   marker = list(color = rgb(0.5882353, 0.5882353,0.5882353, 0.6),
+                                 line = list(color = rgb(0.1,0.1,0.1, 0.8), width = 2), size = 16))
+    } else if (input$diversity == "Phylogenetic Diversity"){
+      pf = plot_ly(f1, x = ~Day, y = ~PD, type = 'scatter', mode = "lines+markers", 
+                   line = list(color = rgb(0.5882353, 0.5882353,0.5882353), width = 3, dash = "dash"), 
+                   marker = list(color = rgb(0.5882353, 0.5882353,0.5882353, 0.6),
+                                 line = list(color = rgb(0.1,0.1,0.1, 0.8), width = 2), size = 16))
+      
+    }
+    
+    
+    # if(exists("s2")){
+    #   add_trace(pr, data = r2, x = ~Day, y = ~Richness, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2, 0.5), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+    # }
+    
   })
   
-  output$diversity = renderPlotly({
-    pd = plot_ly(d1, x = ~Day, y = ~Diversity, type = 'scatter', mode = 'lines+markers', line = list(color = rgb(0.8,0,0), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
-    add_trace(pd, data = d2, x = ~Day, y = ~Diversity, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
-  })
-  
-  output$faithsPD = renderPlotly({
-    pf = plot_ly(f1, x = ~Day, y = ~PD, type = 'scatter', mode = "lines+markers", line = list(color = rgb(0,0.8,0), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
-    add_trace(pf, data = f2, x = ~Day, y = ~PD, mode = "lines+markers", line = list(color = rgb(0.2,0.2,0.2), width = 4), marker = list(color = rgb(0.5882353, 0.5882353,0.5882353), size = 11))
+  output$diversity_description = renderText({
+    if(input$diversity == "Species Richness"){
+      return("Species richness is the number of different species represented in an ecological community, landscape or region. Species richness is simply a count of species, and it does not take into account the abundances of the species or their relative abundance distributions.")
+    } else if (input$diversity == "Shannon's Diversity Index"){
+      return("The Shannon diversity index (H) is another index that is commonly used to characterize species diversity in a community. Like Simpson's index, Shannon's index accounts for both abundance and evenness of the species present. The proportion of species i relative to the total number of species (pi) is calculated, and then multiplied by the natural logarithm of this proportion (lnpi). The resulting product is summed across species, and multiplied by -1:")
+    } else if (input$diversity == "Phylogenetic Diversity"){
+      return("Phylogenetic diversity (“PD”) is a measure of biodiversity, based on phylogeny (the tree of life).  Faith (1992) defined the phylogenetic diversity of a set of species as equal to the sum of the lengths of all those branches on the tree that span the  members of the set. The branch lengths on the tree are informative because they count the relative number of new features arising along that part of the tree. This means that PD indicates “feature diversity” and “option value”")
+
+    }
   })
   
   
   output$map = renderPlotly({
-    maply = ggplot(world) + 
-      geom_sf() + 
-      geom_sf(data = sample_gs, fill = rgb(0.01, 0.02, 0.3, 0.7), size = 0.1)
-    
-    ggplotly(maply)
+    ggplotly(plot_range(input$species_to_map))
     
   })
   

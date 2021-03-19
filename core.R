@@ -10,8 +10,10 @@ library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggplot2)
+library(BIEN)
 
 tree <- read.tree("tree/PhylofeastTree.tre")
+world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ## simulate a food journal
 r1 = richness(s1)
@@ -38,3 +40,9 @@ f1 = faithsPD(s1, tree.pruned)
 
 #fs = fs[fs$family != "", ]
 #fs
+
+
+for(i in common_species){
+  BIEN_ranges_species(i, directory = paste("data", i, sep = "/"))
+}
+

@@ -124,3 +124,22 @@ geom_tiplab3 = function (mapping = NULL, hjust = 0, vjust = 0, align = FALSE, li
                  offset = offset, as_ylab = as_ylab, nodelab = nodelab, 
                  ...), class = "tiplab")
 }
+
+
+#### plot_range() ####
+plot_range = function(species){
+  species_geo = st_read(paste("data", species, sep = "/"))
+  
+  map = ggplot(world) + 
+    geom_sf() + 
+    geom_sf(data = species_geo, fill = rgb(runif(1), runif(1), runif(1), 0.5), size = 0.1) + 
+    xlab("Longitude") + 
+    ylab("Latitude") +
+    theme_bw() +
+    theme(panel.border = element_blank())
+  
+  return(map)
+  
+  
+}
+

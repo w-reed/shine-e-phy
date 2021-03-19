@@ -10,10 +10,9 @@ library(sf)
 library(rnaturalearth)
 library(rnaturalearthdata)
 library(ggplot2)
+library(BIEN)
 
 tree <- read.tree("tree/PhylofeastTree.tre")
-
-sample_gs = st_read("data/sample_gs/")
 world <- ne_countries(scale = "medium", returnclass = "sf")
 
 ## Read in the plants

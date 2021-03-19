@@ -1,3 +1,8 @@
+p{
+  font-size:12;
+  margin-top:20px;
+}
+
 .topimg {
   margin-top: -10px;
   margin-left: 15px;
@@ -38,11 +43,56 @@
 }
 
 .col-sm-4{
-  width: 200px;
+  width:400px;
+}
+
+.well{
+  width:300px;
+}
+
+.well .shiny-input-container {
+    width: 300px;
 }
 
 .form-group{
-  width: 200px;
+  width: 250px;
+  margin-bottom: -20px;
+}
+
+.form-control{
+  border-radius:0;
+}
+
+.input-group{
+  border-radius:2px;
+  width:300px;
+}
+
+.btn-file{
+  border-radius:0;
+}
+
+.well{
+  top:0;
+  left:0;
+  margin-left:-19px;
+  margin-top:-19px;
+  border:none;
+  width:350px;
+  
+}
+
+.progress-bar{
+  background-color:rgb(176,215,141);
+  height:5px;
+  border-radius:0;
+}
+
+
+#foodJournal_progress{
+  border-radius:0;
+  height:5px;
+  margin-bottom:30px;
 }
 
 #foodJournal{
@@ -51,6 +101,20 @@
 }
 
 #demo{
-  width: 100%;
-  
+  width: 148px;
+  border-radius:2px;
+}
+
+#clear{
+  width: 148px;
+  border-radius:2px;
+  background-color: rgb(230, 129, 134, 0.6);
+}
+
+#display{
+  margin-bottom:20px;
+}
+
+#diversity_description{
+  font-size:14;
 }
