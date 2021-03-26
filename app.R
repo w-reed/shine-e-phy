@@ -1,4 +1,5 @@
 library(shiny)
+
 library(shinydashboard)
 library(plotly)
 
@@ -28,7 +29,8 @@ ui = fluidPage(
              
                 tabPanel("Phylogeny",
                          sidebarPanel(
-                           selectInput(inputId = "tree_type", label = "Tree to plot",choices = c("Individual", "Class"))
+                           selectInput(inputId = "tree_type", label = "Tree to plot",choices = c("Individual", "Class")),
+                           actionButton(inputId = "add_traits", label = "Add Traits!")
                          ),
                          mainPanel(
                            plotOutput(outputId = "Phylo", width = 1000, height = 600)
@@ -145,8 +147,101 @@ server = function(input, output, session) {
       tree = tree.pruned2
     }
     
-    ggtree(tree) + 
-      geom_tiplab3() 
+      ggtree(tree) + 
+        geom_tiplab() +
+        xlim(c(0,300))
+    
+
+  })
+  
+  observeEvent(input$add_traits, {
+    
+    insertUI(selector = "#add_traits",
+             where = "afterEnd",
+             ui = actionButton(inputId = "traits_go", label = "Submit"))
+    
+    insertUI(selector = "#add_traits",
+             where = "afterEnd",
+             ui = textInput(inputId = "trait_2", label = "Trait value 2"))
+    insertUI(selector = "#add_traits",
+             where = "afterEnd",
+             ui = textInput(inputId = "trait_1", label = "Trait value 1"))
+    insertUI(selector = "#add_traits",
+             where = "afterEnd",
+             ui = textInput(inputId = "trait_name", label = "Trait"))
+    
+    
+  })
+  
+  observeEvent(input$traits_go,{
+    
+    #req(input$trait_name, input$trait_1, input$trait_2)
+    
+    insertUI(selector = "#traits_go", where = "afterEnd", ui = actionButton("go", "Let's Go!"))
+    
+    for(i in 1:length(tree.pruned$tip.label)){
+      
+      
+      insertUI(selector = "#traits_go",
+               where = "afterEnd",
+               ui = checkboxGroupInput(inputId = paste0("traitinput"), label = tree.pruned$tip.label[i], choices = c(input$trait_1, input$trait_2)))
+      
+      
+    }
+    
+    
+    
+    removeUI(
+      selector = paste0("div:has(> #", "trait_2", ")")
+    )
+    
+    removeUI(
+      selector = paste0("div:has(> #", "trait_1", ")")
+    )
+    
+    removeUI(
+      selector = paste0("div:has(> #", "trait_name", ")")
+    )
+    
+    removeUI(
+      selector = "#add_traits"
+    )
+    removeUI(
+      selector = "#traits_go"
+    )
+    
+  })
+  
+  
+  observeEvent(input$traitinput,{
+    trait_values <<- input$traitinput
+    trait_values <<- rev(trait_values)
+    
+    trait_data <<- as.data.frame(cbind(tree.pruned$tip.label, trait_values))
+    colnames(trait_data) <<- c("genus", "trait_value")
+    
+    print("completed")
+    
+    
+
+    
+  })
+  
+  
+  observeEvent(input$go,{
+    output$Phylo = renderPlot({
+      tree = ggtree(tree.pruned) + 
+              xlim(c(0,300)) +
+              geom_tiplab()
+      
+      tree = tree %<+% trait_data +  
+        geom_tippoint(aes(color = factor(trait_value)))
+      return(tree)
+      
+      
+     })
+    
+    
   })
   
   output$diversity_plot = renderPlotly({

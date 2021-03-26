@@ -134,3 +134,22 @@ p{
 #checkbox :after, #checkbox :before{
   background-color:#bff442;
   }
+  
+#trait_name{
+  margin-bottom:30px;
+}
+
+#trait_1{
+  margin-bottom:30px;
+}
+
+#trait_2{
+  margin-bottom:30px;
+}
+
+#traitinput{
+  width:160px;
+  margin-right:-50px;
+  margin-bottom:20px;
+  float:left;
+}
